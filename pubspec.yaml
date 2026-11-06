@@ -9,7 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  audio_service: ^0.18.18
+  # VIVO 适配：使用内联 fork（含原子随身听所需的 MediaSession/RATING_HEART、
+  # 原生队列分页与厂商 bind action 支持）。其余依赖保持上游原样。
+  audio_service:
+    path: packages/audio_service
   audio_session: ^0.2.4
   audio_metadata_reader: ^1.8.0
   charset: ^2.0.1

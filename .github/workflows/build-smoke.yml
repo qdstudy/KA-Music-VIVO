@@ -1,0 +1,80 @@
+name: VIVO build smoke test
+
+# 手动触发的构建验证：不合并上游、不发布 release。
+# 用途：确认 vivo 包名参数、签名、arm64 构建链路是否正常。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: vivo
+          fetch-depth: 0
+          lfs: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Restore signing key
+        env:
+          VIVO_KEYSTORE_BASE64: ${{ secrets.VIVO_KEYSTORE_BASE64 }}
+          VIVO_STORE_PASSWORD: ${{ secrets.VIVO_STORE_PASSWORD }}
+          VIVO_KEY_ALIAS: ${{ secrets.VIVO_KEY_ALIAS }}
+          VIVO_KEY_PASSWORD: ${{ secrets.VIVO_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${VIVO_KEYSTORE_BASE64}" ]; then
+            printf '%s' "$VIVO_KEYSTORE_BASE64" | base64 --decode > android/app/vivo-release.jks
+            {
+              echo 'storeFile=app/vivo-release.jks'
+              echo "storePassword=${VIVO_STORE_PASSWORD}"
+              echo "keyAlias=${VIVO_KEY_ALIAS}"
+              echo "keyPassword=${VIVO_KEY_PASSWORD}"
+            } > android/key.properties
+          else
+            echo "::warning::未配置 VIVO_KEYSTORE_BASE64，本次使用 debug 签名"
+          fi
+
+      - run: flutter config --no-analytics
+      - run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test
+        run: flutter test
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --target-platform android-arm64 \
+            --android-project-arg=customPackageName=com.apple.android.music
+
+      - name: Verify package id
+        run: |
+          set -euo pipefail
+          AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)
+          "$AAPT2" dump badging build/app/outputs/flutter-apk/app-release.apk | head -1
+          "$AAPT2" dump xmltree --file AndroidManifest.xml \
+            build/app/outputs/flutter-apk/app-release.apk \
+            | grep -E "musicwidgetmix|VivoAudioService|AudioService" || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vivo-smoke-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7

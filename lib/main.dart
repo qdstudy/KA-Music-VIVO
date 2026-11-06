@@ -17,8 +17,9 @@ import 'services/deep_link_service.dart';
 import 'services/device_info_service.dart';
 import 'services/log_service.dart';
 import 'services/download_service.dart';
-import 'services/music_audio_handler.dart';
 import 'services/music_api.dart';
+import 'vivo/vivo_audio_handler.dart';
+import 'vivo/vivo_bridge.dart';
 import 'ui/adaptive_layout.dart';
 import 'ui/app_theme.dart';
 import 'ui/pages/app_shell.dart';
@@ -33,7 +34,7 @@ Future<void> main() async {
   final client = ApiClient();
   final api = MusicApi(client);
   final audioHandler = await AudioService.init(
-    builder: MusicAudioHandler.new,
+    builder: VivoMusicAudioHandler.new,
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'kgka_music_hl.playback',
       androidNotificationChannelName: 'KA Music 播放控制',
@@ -67,7 +68,7 @@ class KaMusicApp extends StatefulWidget {
 
   final ApiClient client;
   final MusicApi api;
-  final MusicAudioHandler audioHandler;
+  final VivoMusicAudioHandler audioHandler;
   final ThemeController themeController;
 
   @override
@@ -100,6 +101,15 @@ class _KaMusicAppState extends State<KaMusicApp> with WidgetsBindingObserver {
       ..downloadController = _downloads
       ..cacheService = _cacheService
       ..localMusic = _localMusic;
+    // vivo 原子随身听的依赖注入：收藏、下载、循环模式、播放回调统一从这里取。
+    VivoBridge.bind(
+      player: _player,
+      auth: _auth,
+      downloads: _downloads,
+      api: _api,
+    );
+    _auth.addListener(widget.audioHandler.refreshVivoMetadata);
+    _player.addListener(widget.audioHandler.refreshVivoMetadata);
     _theme = widget.themeController;
     _auth.restore();
     _downloads.initialize();

@@ -1,0 +1,32 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      vivo OriginOS「原子随身听」(MusicWidgetMix) 支持。
+
+      这些声明放在插件自己的 Manifest 里，构建时由 manifest merger 合并进 App，
+      因此 android/app/src/main/AndroidManifest.xml 可以保持上游原样，
+      跟随上游升级时不会产生冲突。
+
+      - meta-data: 向 vivo 声明本应用支持原子随身听（value / token / 卡片配色）。
+        token 由厂商按包名下发，因此 App 必须使用与之匹配的 applicationId
+        （发布时通过 -PkaApplicationId=com.apple.android.music 指定）。
+      - intent-filter: 厂商用 "com.vivo.musicwidgetmix.support.service" 这个私有
+        action 绑定媒体浏览服务，由 AudioService.onBind 翻译成标准 action。
+    -->
+    <application>
+        <meta-data
+            android:name="support_vivo_musicwidgetmix_value"
+            android:value="1001" />
+        <meta-data
+            android:name="support_vivo_musicwidgetmix_token"
+            android:value="81ed19dacbe2c11fa52a129e3815037c62abc5aee1d5a39f9240c35a09e07eb2" />
+        <meta-data
+            android:name="support_vivo_musicwidgetmix_logo_color"
+            android:value="\#FF5C9D\#FFFFFF" />
+
+        <service android:name="com.ryanheise.audioservice.AudioService">
+            <intent-filter>
+                <action android:name="com.vivo.musicwidgetmix.support.service" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>
