@@ -92,6 +92,14 @@ jobs:
           fi
           echo "上游最新 audio_service（pubspec 约束）= $(awk -F': ' '/^  audio_service:/{print $2}' pubspec.yaml)"
 
+      # ubuntu-latest 默认 JDK 已升到 25，Gradle 8.14 不支持，必须显式固定 17。
+      - name: Set up JDK 17
+        if: steps.release.outputs.needed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Set up Flutter
         if: steps.release.outputs.needed == 'true'
         uses: subosito/flutter-action@v2
