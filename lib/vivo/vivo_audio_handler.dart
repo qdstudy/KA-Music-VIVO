@@ -16,9 +16,9 @@ class VivoMusicAudioHandler extends MusicAudioHandler {
   }
 
   /// vivo MusicWidgetMix EventType 位掩码：
-  /// 0x01f 传输/歌词/进度、0x040 红心、0x080 播放模式、
-  /// 0x100 当前队列、0x200 收藏、0x400 已下载。
-  static const int supportEvents = 0x7df;
+  /// 0x01f 传输/歌词/进度、0x020 上一首/下一首/播放暂停控制、
+  /// 0x040 红心、0x080 播放模式、0x100 当前队列、0x200 收藏、0x400 已下载。
+  static const int supportEvents = 0x7ff;
 
   static const String _supportEventKey =
       'vivomusicmix.media.metadata.support_event';
